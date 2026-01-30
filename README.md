@@ -2,9 +2,17 @@
 
 ThreeForge 프레임워크를 사용한 뱀파이어 서바이버 스타일 게임
 
-## 실행 방법
+## 설치 및 실행
 
 ```bash
+# 클론 (submodule 포함)
+git clone --recursive https://github.com/painh/threeforge-survivor.git
+cd threeforge-survivor
+
+# 이미 클론한 경우 submodule 초기화
+git submodule update --init
+
+# 의존성 설치 및 실행
 npm install
 npm run dev
 ```
