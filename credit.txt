@@ -1,8 +1,11 @@
 # Icon Credits
 
-이 프로젝트에서 사용된 아이콘 목록입니다.
+List of icons used in this project.
 
 ## game-icons.net (CC BY 3.0)
-<!-- 아이콘 사용 시 아래 형식으로 추가:
-- [아이콘명] by [작가명] - https://game-icons.net/...
--->
+Icons from: https://game-icons.net via Iconify API
+
+- slime by Lorc - https://game-icons.net/1x1/lorc/slime.html
+- knight-banner by Lorc - https://game-icons.net/1x1/lorc/knight-banner.html
+- bat by Lorc - https://game-icons.net/1x1/lorc/bat.html
+- goblin-head by Delapouite - https://game-icons.net/1x1/delapouite/goblin-head.html

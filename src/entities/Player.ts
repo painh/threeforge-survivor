@@ -29,12 +29,28 @@ export class PlayerMovementComponent extends Component {
   }
 }
 
+export type DamageCallback = (amount: number, x: number, y: number) => void;
+
 export class PlayerHealthComponent extends Component {
   maxHealth: number = 100;
   currentHealth: number = 100;
+  private onDamageCallback: DamageCallback | null = null;
+
+  /**
+   * 데미지 발생 시 콜백 설정
+   */
+  onDamage(callback: DamageCallback): void {
+    this.onDamageCallback = callback;
+  }
 
   takeDamage(amount: number): void {
     this.currentHealth = Math.max(0, this.currentHealth - amount);
+
+    // 데미지 콜백 호출
+    if (this.onDamageCallback && this.entity) {
+      this.onDamageCallback(amount, this.entity.position.x, this.entity.position.y);
+    }
+
     if (this.currentHealth <= 0) {
       this.onDeath();
     }

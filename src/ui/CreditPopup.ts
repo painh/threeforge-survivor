@@ -40,6 +40,11 @@ export class CreditPopup {
   private scrollbarThumb: Mesh;
   private scrollbarThumbMaterial: MeshBasicMaterial;
 
+  // 스크롤바 드래그 상태
+  private isDraggingScrollbar: boolean = false;
+  private dragStartY: number = 0;
+  private dragStartScrollOffset: number = 0;
+
   private _visible: boolean = false;
   private scrollOffset: number = 0;
   private maxScroll: number = 0;
@@ -126,14 +131,15 @@ export class CreditPopup {
     const maskMaterial = new MeshBasicMaterial({
       colorWrite: false,
       depthWrite: false,
-      stencilWrite: true,
-      stencilRef: CreditPopup.STENCIL_REF,
-      stencilFunc: 519, // AlwaysStencilFunc
-      stencilZPass: 7682, // ReplaceStencilOp
     });
+    // stencil 설정 (생성자 밖에서 직접 설정)
+    maskMaterial.stencilWrite = true;
+    maskMaterial.stencilRef = CreditPopup.STENCIL_REF;
+    maskMaterial.stencilFunc = 519; // AlwaysStencilFunc
+    maskMaterial.stencilZPass = 7682; // ReplaceStencilOp
     this.clipMask = new Mesh(maskGeometry, maskMaterial);
     this.clipMask.position.set(0, 0.15, 0.015);
-    this.clipMask.renderOrder = 1;
+    this.clipMask.renderOrder = 0; // 마스크가 먼저 렌더링되어야 함
     this.container.add(this.clipMask);
 
     // 콘텐츠 패널 (스크롤될 내용)
@@ -165,6 +171,7 @@ export class CreditPopup {
       color: 0x27ae60,
       opacity: 1,
       borderRadius: 0.08,
+      hoverColor: 0x2ecc71,
     });
     this.confirmButtonBg.position.set(0, -1.7, 0.01);
     this.container.add(this.confirmButtonBg);
@@ -324,7 +331,9 @@ export class CreditPopup {
       textElement.traverse((child) => {
         if (child instanceof Mesh && child.material) {
           const material = child.material as MeshBasicMaterial;
-          material.stencilWrite = false;
+          // stencil 테스트 활성화
+          material.stencilWrite = true;
+          (material as any).stencilTest = true; // 이게 없으면 stencil이 작동 안 함!
           material.stencilRef = CreditPopup.STENCIL_REF;
           material.stencilFunc = 514; // EqualStencilFunc
           material.stencilFail = 7680; // KeepStencilOp
@@ -401,6 +410,78 @@ export class CreditPopup {
 
   getConfirmButton(): Mesh[] {
     return this.confirmButtonBg.getInteractiveMeshes();
+  }
+
+  /**
+   * 스크롤바 썸 메시 반환 (레이캐스트용)
+   */
+  getScrollbarThumb(): Mesh {
+    return this.scrollbarThumb;
+  }
+
+  /**
+   * 스크롤바 드래그 시작
+   * @param localY 팝업 로컬 Y 좌표
+   */
+  startScrollbarDrag(localY: number): void {
+    if (this.maxScroll <= 0) return;
+    this.isDraggingScrollbar = true;
+    this.dragStartY = localY;
+    this.dragStartScrollOffset = this.scrollOffset;
+    // 드래그 중 색상 변경
+    this.scrollbarThumbMaterial.color.setHex(0x5dade2);
+  }
+
+  /**
+   * 스크롤바 드래그 업데이트
+   * @param localY 팝업 로컬 Y 좌표
+   */
+  updateScrollbarDrag(localY: number): void {
+    if (!this.isDraggingScrollbar || this.maxScroll <= 0) return;
+
+    const deltaY = this.dragStartY - localY;
+    const trackHeight = this.visibleHeight - 0.2;
+    const thumbHeight = (this.scrollbarThumb.geometry as PlaneGeometry).parameters.height;
+    const scrollableTrackHeight = trackHeight - thumbHeight;
+
+    // 트랙 이동량을 스크롤 오프셋으로 변환
+    const scrollDelta = (deltaY / scrollableTrackHeight) * this.maxScroll;
+    this.scrollOffset = Math.max(0, Math.min(this.maxScroll, this.dragStartScrollOffset + scrollDelta));
+    this.updateScroll();
+  }
+
+  /**
+   * 스크롤바 드래그 종료
+   */
+  endScrollbarDrag(): void {
+    if (this.isDraggingScrollbar) {
+      this.isDraggingScrollbar = false;
+      // 색상 복원
+      this.scrollbarThumbMaterial.color.setHex(0x3498db);
+    }
+  }
+
+  /**
+   * 드래그 중인지 확인
+   */
+  isScrollbarDragging(): boolean {
+    return this.isDraggingScrollbar;
+  }
+
+  /**
+   * 스크롤바 호버 상태 설정
+   */
+  setScrollbarHovered(hovered: boolean): void {
+    if (!this.isDraggingScrollbar) {
+      this.scrollbarThumbMaterial.color.setHex(hovered ? 0x5dade2 : 0x3498db);
+    }
+  }
+
+  /**
+   * 확인 버튼 호버 상태 설정
+   */
+  setConfirmButtonHovered(hovered: boolean): void {
+    this.confirmButtonBg.setHovered(hovered);
   }
 
   addToScene(scene: Scene): void {

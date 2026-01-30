@@ -4,7 +4,11 @@ export interface InputState {
   left: boolean;
   right: boolean;
   attack: boolean;
+  inventory: boolean;
 }
+
+export type InputAction = keyof InputState;
+export type KeyPressCallback = (action: InputAction) => void;
 
 export class InputManager {
   private state: InputState = {
@@ -13,6 +17,7 @@ export class InputManager {
     left: false,
     right: false,
     attack: false,
+    inventory: false,
   };
 
   private keyMap: Record<string, keyof InputState> = {
@@ -25,7 +30,12 @@ export class InputManager {
     KeyD: 'right',
     ArrowRight: 'right',
     Space: 'attack',
+    KeyI: 'inventory',
   };
+
+  // 토글형 키 (한 번 누르면 콜백 호출)
+  private toggleKeys: Set<keyof InputState> = new Set(['inventory']);
+  private onKeyPressCallbacks: KeyPressCallback[] = [];
 
   constructor() {
     this.bindEvents();
@@ -41,6 +51,14 @@ export class InputManager {
     const action = this.keyMap[event.code];
     if (action) {
       event.preventDefault();
+
+      // 토글 키는 누를 때만 콜백 호출
+      if (this.toggleKeys.has(action) && !this.state[action]) {
+        for (const callback of this.onKeyPressCallbacks) {
+          callback(action);
+        }
+      }
+
       this.state[action] = true;
     }
   };
@@ -60,7 +78,21 @@ export class InputManager {
     this.state.left = false;
     this.state.right = false;
     this.state.attack = false;
+    this.state.inventory = false;
   };
+
+  /**
+   * 키 입력 콜백 등록 (토글 키에 대해)
+   */
+  onKeyPress(callback: KeyPressCallback): () => void {
+    this.onKeyPressCallbacks.push(callback);
+    return () => {
+      const index = this.onKeyPressCallbacks.indexOf(callback);
+      if (index !== -1) {
+        this.onKeyPressCallbacks.splice(index, 1);
+      }
+    };
+  }
 
   getState(): Readonly<InputState> {
     return this.state;

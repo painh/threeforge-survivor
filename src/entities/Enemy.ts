@@ -1,7 +1,32 @@
 import { Entity } from '../../lib/threeforge/src/core/Entity';
 import { Component } from '../../lib/threeforge/src/core/Component';
 import { Poolable } from '../core/ObjectPool';
-import { PlaneGeometry, Mesh, MeshBasicMaterial, Object3D } from 'three';
+import {
+  PlaneGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  TextureLoader,
+  SRGBColorSpace,
+  Texture,
+} from 'three';
+
+// 적 텍스처 캐시 (한 번만 로드)
+let enemyTexture: Texture | null = null;
+const textureLoader = new TextureLoader();
+
+function getEnemyTexture(): Promise<Texture> {
+  if (enemyTexture) {
+    return Promise.resolve(enemyTexture);
+  }
+  return new Promise((resolve) => {
+    textureLoader.load('/assets/sprites/enemy.svg', (texture) => {
+      texture.colorSpace = SRGBColorSpace;
+      enemyTexture = texture;
+      resolve(texture);
+    });
+  });
+}
 
 export class EnemyMovementComponent extends Component {
   speed: number = 2;
@@ -39,17 +64,27 @@ export class EnemyHealthComponent extends Component {
 
 export class Enemy extends Entity implements Poolable {
   private _poolActive: boolean = false;
+  private material: MeshBasicMaterial;
 
   constructor() {
     super({
       tags: ['enemy'],
     });
 
-    // Create a simple colored quad for the enemy
+    // Create enemy with SVG texture
     const geometry = new PlaneGeometry(0.8, 0.8);
-    const material = new MeshBasicMaterial({ color: 0xff4444 });
-    const mesh = new Mesh(geometry, material);
+    this.material = new MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+    });
+    const mesh = new Mesh(geometry, this.material);
     this.add(mesh);
+
+    // Load texture (캐시된 텍스처 사용)
+    getEnemyTexture().then((texture) => {
+      this.material.map = texture;
+      this.material.needsUpdate = true;
+    });
 
     // Add components
     this.addComponent(new EnemyMovementComponent());

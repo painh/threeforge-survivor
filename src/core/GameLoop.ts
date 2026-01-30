@@ -6,6 +6,7 @@ export interface GameLoopCallbacks {
 
 export class GameLoop {
   private running: boolean = false;
+  private paused: boolean = false;
   private lastTime: number = 0;
   private accumulator: number = 0;
   private readonly fixedTimeStep: number;
@@ -53,18 +54,21 @@ export class GameLoop {
       deltaTime = this.maxAccumulator;
     }
 
-    this.accumulator += deltaTime;
+    // 일시정지 상태면 업데이트 스킵, 렌더만 수행
+    if (!this.paused) {
+      this.accumulator += deltaTime;
 
-    // Fixed update for physics/collision
-    while (this.accumulator >= this.fixedTimeStep) {
-      this.callbacks.fixedUpdate(this.fixedTimeStep);
-      this.accumulator -= this.fixedTimeStep;
+      // Fixed update for physics/collision
+      while (this.accumulator >= this.fixedTimeStep) {
+        this.callbacks.fixedUpdate(this.fixedTimeStep);
+        this.accumulator -= this.fixedTimeStep;
+      }
+
+      // Variable update for input/animation
+      this.callbacks.update(deltaTime);
     }
 
-    // Variable update for input/animation
-    this.callbacks.update(deltaTime);
-
-    // Render
+    // Render (항상 수행 - UI 업데이트 위해)
     this.callbacks.render();
 
     this.animationFrameId = requestAnimationFrame(this.loop);
@@ -72,5 +76,20 @@ export class GameLoop {
 
   get isRunning(): boolean {
     return this.running;
+  }
+
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  pause(): void {
+    this.paused = true;
+  }
+
+  resume(): void {
+    if (this.paused) {
+      this.paused = false;
+      this.lastTime = performance.now() / 1000;
+    }
   }
 }

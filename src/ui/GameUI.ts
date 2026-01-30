@@ -38,6 +38,15 @@ export class GameUI {
   private creditButton: UIPanel;
   private creditButtonBg: UIBox;
 
+  // Inventory Button (오른쪽 하단, Credit 위) - troika-ui
+  private inventoryButton: UIPanel;
+  private inventoryButtonBg: UIBox;
+  private onInventoryToggle: (() => void) | null = null;
+
+  // Widget Showcase Button (오른쪽 하단, Inventory 위) - troika-ui
+  private showcaseButton: UIPanel;
+  private showcaseButtonBg: UIBox;
+
   private state: GameUIState = {
     hp: 100,
     maxHp: 100,
@@ -119,6 +128,7 @@ export class GameUI {
       color: 0x34495e,
       opacity: 0.85,
       borderRadius: 0.08,
+      hoverColor: 0x4a6278,
     });
 
     this.creditButton = new UIPanel({
@@ -138,11 +148,67 @@ export class GameUI {
     creditText.position.z = 0.01;
     this.creditButton.add(creditText);
 
+    // Inventory Button - troika-ui
+    this.inventoryButtonBg = new UIBox({
+      width: 1.6,
+      height: 0.45,
+      color: 0x2c3e50,
+      opacity: 0.85,
+      borderRadius: 0.08,
+      hoverColor: 0x3d566e,
+    });
+
+    this.inventoryButton = new UIPanel({
+      width: 1.6,
+      height: 0.45,
+    });
+    this.inventoryButton.add(this.inventoryButtonBg);
+    this.inventoryButtonBg.position.z = -0.01;
+
+    const inventoryText = new UIText({
+      text: 'Inventory (I)',
+      fontSize: 0.16,
+      color: 0xecf0f1,
+      anchorX: 'center',
+      anchorY: 'middle',
+    });
+    inventoryText.position.z = 0.01;
+    this.inventoryButton.add(inventoryText);
+
+    // Widget Showcase Button - troika-ui
+    this.showcaseButtonBg = new UIBox({
+      width: 1.6,
+      height: 0.45,
+      color: 0x8e44ad,
+      opacity: 0.85,
+      borderRadius: 0.08,
+      hoverColor: 0x9b59b6,
+    });
+
+    this.showcaseButton = new UIPanel({
+      width: 1.6,
+      height: 0.45,
+    });
+    this.showcaseButton.add(this.showcaseButtonBg);
+    this.showcaseButtonBg.position.z = -0.01;
+
+    const showcaseText = new UIText({
+      text: 'Widgets',
+      fontSize: 0.18,
+      color: 0xecf0f1,
+      anchorX: 'center',
+      anchorY: 'middle',
+    });
+    showcaseText.position.z = 0.01;
+    this.showcaseButton.add(showcaseText);
+
     // UI 요소들을 그룹에 추가
     this.uiRoot.add(this.hpBarGroup);
     this.uiRoot.add(this.scorePanel);
     this.uiRoot.add(this.fpsPanel);
     this.uiRoot.add(this.creditButton);
+    this.uiRoot.add(this.inventoryButton);
+    this.uiRoot.add(this.showcaseButton);
 
     // 초기 위치 설정
     this.updateLayout();
@@ -164,6 +230,12 @@ export class GameUI {
 
     // Credit Button: 오른쪽 하단
     this.creditButton.position.set(halfW - 1.1 - margin, -halfH + 0.4 + margin, 0);
+
+    // Inventory Button: Credit 버튼 위
+    this.inventoryButton.position.set(halfW - 1.1 - margin, -halfH + 0.95 + margin, 0);
+
+    // Widget Showcase Button: Inventory 버튼 위
+    this.showcaseButton.position.set(halfW - 1.1 - margin, -halfH + 1.5 + margin, 0);
   }
 
   addToScene(scene: Scene): void {
@@ -269,5 +341,35 @@ export class GameUI {
 
   setCreditButtonVisible(visible: boolean): void {
     this.creditButton.visible = visible;
+  }
+
+  setCreditButtonHovered(hovered: boolean): void {
+    this.creditButtonBg.setHovered(hovered);
+  }
+
+  getInventoryButton(): UIBox {
+    return this.inventoryButtonBg;
+  }
+
+  setInventoryButtonHovered(hovered: boolean): void {
+    this.inventoryButtonBg.setHovered(hovered);
+  }
+
+  setOnInventoryToggle(callback: (() => void) | null): void {
+    this.onInventoryToggle = callback;
+  }
+
+  triggerInventoryToggle(): void {
+    if (this.onInventoryToggle) {
+      this.onInventoryToggle();
+    }
+  }
+
+  getShowcaseButton(): UIBox {
+    return this.showcaseButtonBg;
+  }
+
+  setShowcaseButtonHovered(hovered: boolean): void {
+    this.showcaseButtonBg.setHovered(hovered);
   }
 }
