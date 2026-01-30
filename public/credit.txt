@@ -1,0 +1,27 @@
+# 크레딧
+
+이 프로젝트에서 사용된 리소스 목록입니다.
+
+## 아이콘 (game-icons.net)
+라이선스: CC BY 3.0
+출처: https://game-icons.net (Iconify API)
+
+- 슬라임 아이콘 - Lorc 제작
+- 기사 배너 아이콘 - Lorc 제작
+- 박쥐 아이콘 - Lorc 제작
+- 고블린 머리 아이콘 - Delapouite 제작
+
+## 폰트
+- 배달의민족 한나체 11살 (BMHANNA)
+  무료 배포 폰트
+
+## 엔진 및 라이브러리
+- Three.js - 3D 렌더링 엔진
+- three-mesh-ui - UI 라이브러리
+- ThreeForge - 게임 프레임워크
+
+## 개발
+- 뱀파이어 서바이버 스타일 게임
+- 2024년 제작
+
+감사합니다!
