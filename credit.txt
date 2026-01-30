@@ -1,0 +1,8 @@
+# Icon Credits
+
+이 프로젝트에서 사용된 아이콘 목록입니다.
+
+## game-icons.net (CC BY 3.0)
+<!-- 아이콘 사용 시 아래 형식으로 추가:
+- [아이콘명] by [작가명] - https://game-icons.net/...
+-->
