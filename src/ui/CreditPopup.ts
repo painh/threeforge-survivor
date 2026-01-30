@@ -1,5 +1,5 @@
 import ThreeMeshUI from 'three-mesh-ui';
-import { Scene, Color, Group, Object3D } from 'three';
+import { Scene, Color, Group } from 'three';
 
 export class CreditPopup {
   private popupRoot: Group;
@@ -8,10 +8,6 @@ export class CreditPopup {
   private contentContainer: ThreeMeshUI.Block;
   private textBlock: ThreeMeshUI.Block;
   private confirmButton: ThreeMeshUI.Block;
-
-  // 스크롤바 요소
-  private scrollTrack: ThreeMeshUI.Block;
-  private scrollThumb: ThreeMeshUI.Block;
 
   private _visible: boolean = false;
   private scrollOffset: number = 0;
@@ -27,7 +23,7 @@ export class CreditPopup {
 
   constructor() {
     this.popupRoot = new Group();
-    this.popupRoot.position.z = 2; // UI보다 위에 표시
+    this.popupRoot.position.z = 2;
     this.popupRoot.visible = false;
 
     // 반투명 오버레이 (전체 화면)
@@ -70,25 +66,14 @@ export class CreditPopup {
     });
     titleBlock.add(titleText);
 
-    // 스크롤 영역과 스크롤바를 담는 가로 컨테이너
-    const scrollAreaContainer = new ThreeMeshUI.Block({
+    // 스크롤 가능한 콘텐츠 영역 (클리핑 컨테이너)
+    this.contentContainer = new ThreeMeshUI.Block({
       width: 5.6,
       height: this.visibleHeight,
       backgroundColor: new Color(0x16213e),
       backgroundOpacity: 1,
       borderRadius: 0.06,
-      contentDirection: 'row',
-      justifyContent: 'start',
-      alignItems: 'center',
-    });
-
-    // 스크롤 가능한 콘텐츠 영역 (클리핑 컨테이너)
-    this.contentContainer = new ThreeMeshUI.Block({
-      width: 5.2,
-      height: this.visibleHeight - 0.15,
-      backgroundColor: new Color(0x16213e),
-      backgroundOpacity: 0,
-      padding: 0.08,
+      padding: 0.1,
       justifyContent: 'start',
       alignItems: 'center',
       hiddenOverflow: true,
@@ -96,7 +81,7 @@ export class CreditPopup {
 
     // 텍스트 블록 (스크롤될 내용)
     this.textBlock = new ThreeMeshUI.Block({
-      width: 5.0,
+      width: 5.4,
       height: 'auto',
       backgroundColor: new Color(0x16213e),
       backgroundOpacity: 0,
@@ -105,32 +90,6 @@ export class CreditPopup {
     });
 
     this.contentContainer.add(this.textBlock);
-
-    // 스크롤바 트랙 (배경)
-    this.scrollTrack = new ThreeMeshUI.Block({
-      width: 0.12,
-      height: this.visibleHeight - 0.3,
-      backgroundColor: new Color(0x0a0a1a),
-      backgroundOpacity: 1,
-      borderRadius: 0.06,
-      margin: 0.08,
-    });
-
-    // 스크롤바 썸 (움직이는 부분)
-    this.scrollThumb = new ThreeMeshUI.Block({
-      width: 0.1,
-      height: 0.8, // 동적으로 조절됨
-      backgroundColor: new Color(0x3498db),
-      backgroundOpacity: 1,
-      borderRadius: 0.05,
-    });
-
-    // 썸을 트랙에 절대 위치로 추가
-    this.scrollThumb.position.z = 0.01;
-    Object3D.prototype.add.call(this.scrollTrack, this.scrollThumb);
-
-    scrollAreaContainer.add(this.contentContainer);
-    scrollAreaContainer.add(this.scrollTrack);
 
     // 확인 버튼
     this.confirmButton = new ThreeMeshUI.Block({
@@ -152,7 +111,7 @@ export class CreditPopup {
 
     // 조립
     this.container.add(titleBlock);
-    this.container.add(scrollAreaContainer);
+    this.container.add(this.contentContainer);
     this.container.add(this.confirmButton);
 
     this.popupRoot.add(this.overlay);
@@ -172,7 +131,7 @@ export class CreditPopup {
 
     lines.forEach((line) => {
       const lineBlock = new ThreeMeshUI.Block({
-        width: 5.0,
+        width: 5.4,
         height: 0.22,
         backgroundColor: new Color(0x16213e),
         backgroundOpacity: 0,
@@ -199,9 +158,6 @@ export class CreditPopup {
 
     // 텍스트 블록 높이 설정
     this.textBlock.set({ height: this.contentHeight });
-
-    // 스크롤바 썸 크기 및 표시 업데이트
-    this.updateScrollbar();
   }
 
   show(onClose?: () => void): void {
@@ -235,43 +191,6 @@ export class CreditPopup {
     // 텍스트 블록의 Y 위치 조절
     const topPosition = (this.visibleHeight / 2) - (this.contentHeight / 2) + this.scrollOffset;
     this.textBlock.position.y = topPosition;
-
-    // 스크롤바 위치 업데이트
-    this.updateScrollbarPosition();
-  }
-
-  private updateScrollbar(): void {
-    const trackHeight = this.visibleHeight - 0.3;
-
-    if (this.maxScroll <= 0) {
-      // 스크롤이 필요없으면 썸을 트랙 전체 크기로
-      this.scrollThumb.set({ height: trackHeight });
-      this.scrollThumb.position.y = 0;
-      this.scrollTrack.set({ backgroundOpacity: 0.3 });
-      this.scrollThumb.set({ backgroundOpacity: 0.3 });
-    } else {
-      // 썸 크기 계산 (콘텐츠 대비 보이는 영역 비율)
-      const ratio = this.visibleHeight / this.contentHeight;
-      const thumbHeight = Math.max(0.25, trackHeight * ratio);
-      this.scrollThumb.set({ height: thumbHeight });
-      this.scrollTrack.set({ backgroundOpacity: 1 });
-      this.scrollThumb.set({ backgroundOpacity: 1 });
-    }
-  }
-
-  private updateScrollbarPosition(): void {
-    if (this.maxScroll <= 0) return;
-
-    const trackHeight = this.visibleHeight - 0.3;
-    const ratio = this.visibleHeight / this.contentHeight;
-    const thumbHeight = Math.max(0.25, trackHeight * ratio);
-
-    // 스크롤 비율에 따른 썸 위치
-    const scrollRatio = this.scrollOffset / this.maxScroll;
-    const maxThumbTravel = trackHeight - thumbHeight;
-    const thumbY = (trackHeight / 2) - (thumbHeight / 2) - (scrollRatio * maxThumbTravel);
-
-    this.scrollThumb.position.y = thumbY;
   }
 
   getConfirmButton(): ThreeMeshUI.Block {
@@ -287,7 +206,6 @@ export class CreditPopup {
   }
 
   setPosition(x: number, y: number, cameraZ: number = 10): void {
-    // GameUI(z=5)보다 카메라에 더 가깝게 배치 (GameUI 위에 보이도록)
     this.popupRoot.position.set(x, y, 6);
   }
 
