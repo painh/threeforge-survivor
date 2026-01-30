@@ -28,8 +28,8 @@ export class Game {
   private currentFps: number = 60;
 
   constructor() {
-    // Create renderer
-    this.renderer = new WebGLRenderer({ antialias: false });
+    // Create renderer (stencil buffer 활성화 - UI 마스킹용)
+    this.renderer = new WebGLRenderer({ antialias: false, stencil: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setClearColor(0x1a1a2e);
@@ -189,6 +189,10 @@ export class Game {
       }, deltaTime);
     }
 
+    // CreditPopup 업데이트 (stencil 설정 유지)
+    if (this.creditPopup.visible) {
+      this.creditPopup.update();
+    }
   }
 
   private fixedUpdate(deltaTime: number): void {
@@ -224,10 +228,8 @@ export class Game {
 
     // 팝업이 열려있으면 확인 버튼 체크
     if (this.creditPopup.visible) {
-      const confirmIntersects = this.raycaster.intersectObject(
-        this.creditPopup.getConfirmButton(),
-        true
-      );
+      const confirmMeshes = this.creditPopup.getConfirmButton();
+      const confirmIntersects = this.raycaster.intersectObjects(confirmMeshes, true);
       if (confirmIntersects.length > 0) {
         this.creditPopup.hide();
         this.gameLoop.resume();
@@ -237,10 +239,9 @@ export class Game {
     }
 
     // 크레딧 버튼 클릭 체크
-    const creditIntersects = this.raycaster.intersectObject(
-      this.gameUI.getCreditButton(),
-      true
-    );
+    const creditButton = this.gameUI.getCreditButton();
+    const creditMeshes = creditButton.getInteractiveMeshes();
+    const creditIntersects = this.raycaster.intersectObjects(creditMeshes, true);
     if (creditIntersects.length > 0) {
       this.gameLoop.pause();
       this.creditPopup.show(() => {
