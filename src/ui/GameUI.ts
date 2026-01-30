@@ -1,12 +1,5 @@
-import ThreeMeshUI from 'three-mesh-ui';
-import {
-  Scene,
-  Color,
-  Group,
-  Mesh,
-  PlaneGeometry,
-  MeshBasicMaterial,
-} from 'three';
+import { Scene, Group, Mesh, PlaneGeometry, MeshBasicMaterial } from 'three';
+import { UIPanel, UIText, UIBox } from '../../lib/three-troika-ui/src';
 
 export interface GameUIState {
   hp: number;
@@ -18,7 +11,7 @@ export interface GameUIState {
 export class GameUI {
   private uiRoot: Group;
 
-  // HP Bar (왼쪽 상단) - 순수 Three.js Mesh 사용
+  // HP Bar (왼쪽 상단) - 순수 Three.js Mesh 사용 (지연 애니메이션 때문에)
   private hpBarGroup: Group;
   private hpBarBg: Mesh;
   private hpDelayFill: Mesh;
@@ -27,22 +20,23 @@ export class GameUI {
   private hpFillMaterial: MeshBasicMaterial;
 
   // HP 지연 애니메이션 상태
-  private delayedHp: number = -1; // -1은 초기화 필요 표시
-  private lastHp: number = -1;    // -1은 초기화 필요 표시
+  private delayedHp: number = -1;
+  private lastHp: number = -1;
   private delayTimer: number = 0;
-  private readonly DELAY_WAIT: number = 0.3;    // 지연 시작 전 대기 시간
-  private readonly DELAY_SPEED: number = 100;   // 초당 감소/증가 속도 (1초에 100 HP)
+  private readonly DELAY_WAIT: number = 0.3;
+  private readonly DELAY_SPEED: number = 100;
 
-  // Score (중앙 상단)
-  private scoreContainer: ThreeMeshUI.Block;
-  private scoreText: ThreeMeshUI.Text;
+  // Score (중앙 상단) - troika-ui
+  private scorePanel: UIPanel;
+  private scoreText: UIText;
 
-  // FPS Counter (왼쪽 상단, HP 아래)
-  private fpsContainer: ThreeMeshUI.Block;
-  private fpsText: ThreeMeshUI.Text;
+  // FPS Counter (왼쪽 상단, HP 아래) - troika-ui
+  private fpsPanel: UIPanel;
+  private fpsText: UIText;
 
-  // Credit Button (오른쪽 하단)
-  private creditButton: ThreeMeshUI.Block;
+  // Credit Button (오른쪽 하단) - troika-ui
+  private creditButton: UIPanel;
+  private creditButtonBg: UIBox;
 
   private state: GameUIState = {
     hp: 100,
@@ -51,102 +45,103 @@ export class GameUI {
     fps: 60,
   };
 
-  // 카메라 뷰 크기 (fov 60, 거리 5에서의 실제 뷰 크기)
+  // 카메라 뷰 크기
   private viewWidth: number = 12;
   private viewHeight: number = 5.7;
 
   constructor() {
     this.uiRoot = new Group();
-    this.uiRoot.position.z = 1; // UI가 게임 오브젝트 위에 표시되도록
+    this.uiRoot.position.z = 1;
 
-    // HP Bar - 순수 Three.js Mesh로 구현
+    // HP Bar - 순수 Three.js Mesh로 구현 (지연 애니메이션)
     this.hpBarGroup = new Group();
 
-    // HP Bar 배경 (검은색)
     const bgGeometry = new PlaneGeometry(2.8, 0.3);
     const bgMaterial = new MeshBasicMaterial({ color: 0x222222 });
     this.hpBarBg = new Mesh(bgGeometry, bgMaterial);
     this.hpBarBg.position.z = 0;
     this.hpBarGroup.add(this.hpBarBg);
 
-    // 지연 게이지 (노란색) - HP bar보다 약간 작게
     const delayGeometry = new PlaneGeometry(2.68, 0.20);
     this.hpDelayMaterial = new MeshBasicMaterial({ color: 0xf1c40f });
     this.hpDelayFill = new Mesh(delayGeometry, this.hpDelayMaterial);
     this.hpDelayFill.position.z = 0.01;
     this.hpBarGroup.add(this.hpDelayFill);
 
-    // HP Bar 채움 (녹색)
     const fillGeometry = new PlaneGeometry(2.7, 0.22);
     this.hpFillMaterial = new MeshBasicMaterial({ color: 0x2ecc71 });
     this.hpBarFill = new Mesh(fillGeometry, this.hpFillMaterial);
     this.hpBarFill.position.z = 0.02;
     this.hpBarGroup.add(this.hpBarFill);
 
-    // Score Container (중앙 상단)
-    this.scoreContainer = new ThreeMeshUI.Block({
+    // Score Panel - troika-ui
+    this.scorePanel = new UIPanel({
       width: 2.5,
       height: 0.6,
-      backgroundColor: new Color(0x000000),
+      backgroundColor: 0x000000,
       backgroundOpacity: 0.7,
       borderRadius: 0.08,
-      justifyContent: 'center',
-      alignItems: 'center',
-      fontFamily: '/assets/fonts/BMHANNA_11yrs_ttf.json',
-      fontTexture: '/assets/fonts/BMHANNA.png',
     });
 
-    this.scoreText = new ThreeMeshUI.Text({
-      content: '0',
+    this.scoreText = new UIText({
+      text: '0',
       fontSize: 0.35,
-      fontColor: new Color(0xf1c40f),
+      color: 0xf1c40f,
+      anchorX: 'center',
+      anchorY: 'middle',
     });
-    this.scoreContainer.add(this.scoreText);
+    this.scoreText.position.z = 0.01;
+    this.scorePanel.add(this.scoreText);
 
-    // FPS Container (왼쪽 상단, HP 아래)
-    this.fpsContainer = new ThreeMeshUI.Block({
-      width: 1.2,
+    // FPS Panel - troika-ui
+    this.fpsPanel = new UIPanel({
+      width: 1.4,
       height: 0.35,
-      backgroundColor: new Color(0x000000),
+      backgroundColor: 0x000000,
       backgroundOpacity: 0.5,
       borderRadius: 0.04,
-      justifyContent: 'center',
-      alignItems: 'center',
-      fontFamily: '/assets/fonts/BMHANNA_11yrs_ttf.json',
-      fontTexture: '/assets/fonts/BMHANNA.png',
     });
 
-    this.fpsText = new ThreeMeshUI.Text({
-      content: 'FPS: 60',
+    this.fpsText = new UIText({
+      text: 'FPS: 60',
       fontSize: 0.15,
-      fontColor: new Color(0x2ecc71),
+      color: 0x2ecc71,
+      anchorX: 'center',
+      anchorY: 'middle',
     });
-    this.fpsContainer.add(this.fpsText);
+    this.fpsText.position.z = 0.01;
+    this.fpsPanel.add(this.fpsText);
 
-    // Credit Button (오른쪽 하단)
-    this.creditButton = new ThreeMeshUI.Block({
+    // Credit Button - troika-ui
+    this.creditButtonBg = new UIBox({
       width: 1.6,
       height: 0.45,
-      backgroundColor: new Color(0x34495e),
-      backgroundOpacity: 0.85,
+      color: 0x34495e,
+      opacity: 0.85,
       borderRadius: 0.08,
-      justifyContent: 'center',
-      alignItems: 'center',
-      fontFamily: '/assets/fonts/BMHANNA_11yrs_ttf.json',
-      fontTexture: '/assets/fonts/BMHANNA.png',
     });
 
-    const creditText = new ThreeMeshUI.Text({
-      content: 'Credit',
-      fontSize: 0.2,
-      fontColor: new Color(0xecf0f1),
+    this.creditButton = new UIPanel({
+      width: 1.6,
+      height: 0.45,
     });
+    this.creditButton.add(this.creditButtonBg);
+    this.creditButtonBg.position.z = -0.01;
+
+    const creditText = new UIText({
+      text: 'Credit',
+      fontSize: 0.2,
+      color: 0xecf0f1,
+      anchorX: 'center',
+      anchorY: 'middle',
+    });
+    creditText.position.z = 0.01;
     this.creditButton.add(creditText);
 
     // UI 요소들을 그룹에 추가
     this.uiRoot.add(this.hpBarGroup);
-    this.uiRoot.add(this.scoreContainer);
-    this.uiRoot.add(this.fpsContainer);
+    this.uiRoot.add(this.scorePanel);
+    this.uiRoot.add(this.fpsPanel);
     this.uiRoot.add(this.creditButton);
 
     // 초기 위치 설정
@@ -162,10 +157,10 @@ export class GameUI {
     this.hpBarGroup.position.set(-halfW + 1.7 + margin, halfH - 0.3 - margin, 0);
 
     // Score: 중앙 상단
-    this.scoreContainer.position.set(0, halfH - 0.45 - margin, 0);
+    this.scorePanel.position.set(0, halfH - 0.45 - margin, 0);
 
     // FPS: 왼쪽 상단, HP 아래
-    this.fpsContainer.position.set(-halfW + 0.9 + margin, halfH - 1.0 - margin, 0);
+    this.fpsPanel.position.set(-halfW + 0.9 + margin, halfH - 1.0 - margin, 0);
 
     // Credit Button: 오른쪽 하단
     this.creditButton.position.set(halfW - 1.1 - margin, -halfH + 0.4 + margin, 0);
@@ -195,10 +190,8 @@ export class GameUI {
 
     // HP 변화 감지
     if (hpDiff < 0) {
-      // 데미지: 지연 타이머 시작 (지연 게이지는 그대로, HP바만 즉시 감소)
       this.delayTimer = this.DELAY_WAIT;
     } else if (hpDiff > 0) {
-      // 회복: 지연 게이지를 현재 위치에서 시작 (HP바는 즉시 증가)
       this.delayTimer = 0;
     }
 
@@ -206,12 +199,9 @@ export class GameUI {
     if (this.delayTimer > 0) {
       this.delayTimer -= deltaTime;
     } else {
-      // 지연 게이지를 현재 HP로 점진적 이동
       if (this.delayedHp > currentHp) {
-        // 데미지 후 지연 감소
         this.delayedHp = Math.max(currentHp, this.delayedHp - this.DELAY_SPEED * deltaTime);
       } else if (this.delayedHp < currentHp) {
-        // 회복 후 지연 증가
         this.delayedHp = Math.min(currentHp, this.delayedHp + this.DELAY_SPEED * deltaTime);
       }
     }
@@ -222,12 +212,9 @@ export class GameUI {
     const hpPercent = Math.max(0, Math.min(1, currentHp / maxHp));
     const delayPercent = Math.max(0, Math.min(1, this.delayedHp / maxHp));
 
-    // HP바 너비 계산
     const maxWidth = 2.7;
-    const hpWidth = Math.max(0.01, maxWidth * hpPercent);
-    const delayWidth = Math.max(0.01, maxWidth * delayPercent);
 
-    // HP바 업데이트 (스케일로 너비 조절, 왼쪽 정렬)
+    // HP바 업데이트
     this.hpBarFill.scale.x = hpPercent;
     this.hpBarFill.position.x = -maxWidth / 2 * (1 - hpPercent);
 
@@ -235,40 +222,33 @@ export class GameUI {
     this.hpDelayFill.scale.x = delayPercent;
     this.hpDelayFill.position.x = -maxWidth / 2 * (1 - delayPercent);
 
-
     // Update Score
-    this.scoreText.set({ content: this.state.score.toString() });
+    this.scoreText.setText(this.state.score.toString());
 
     // Update FPS
-    this.fpsText.set({ content: `FPS: ${this.state.fps}` });
+    this.fpsText.setText(`FPS: ${this.state.fps}`);
 
     // FPS 색상 변경
-    let fpsColor: Color;
+    let fpsColor: number;
     if (this.state.fps >= 55) {
-      fpsColor = new Color(0x2ecc71); // 녹색
+      fpsColor = 0x2ecc71; // 녹색
     } else if (this.state.fps >= 30) {
-      fpsColor = new Color(0xf39c12); // 주황색
+      fpsColor = 0xf39c12; // 주황색
     } else {
-      fpsColor = new Color(0xe74c3c); // 빨간색
+      fpsColor = 0xe74c3c; // 빨간색
     }
-    this.fpsText.set({ fontColor: fpsColor });
+    this.fpsText.setColor(fpsColor);
   }
 
-  // 렌더 루프에서 호출
+  // 렌더 루프에서 호출 (troika는 자동 업데이트)
   updateMeshUI(): void {
-    ThreeMeshUI.update();
+    // troika-three-text는 자동으로 업데이트됨
   }
 
-  // 카메라 위치 따라가기 (게임 오브젝트보다 카메라에 더 가깝게)
-  setPosition(x: number, y: number, cameraZ: number = 10): void {
-    // 게임 오브젝트는 z=0에 있음
-    // UI는 카메라(z=10)와 게임오브젝트(z=0) 사이에 배치해야 함
-    // 카메라에서 가까울수록 UI가 작게 보이므로 적절한 거리 선택
-    // z=5면 카메라에서 5 단위 떨어짐, 게임오브젝트보다 카메라에 가까움
+  setPosition(x: number, y: number, _cameraZ: number = 10): void {
     this.uiRoot.position.set(x, y, 5);
   }
 
-  // 뷰 크기 업데이트
   setViewSize(width: number, height: number): void {
     this.viewWidth = width;
     this.viewHeight = height;
@@ -279,17 +259,14 @@ export class GameUI {
     return { ...this.state };
   }
 
-  getCreditButton(): ThreeMeshUI.Block {
-    return this.creditButton;
+  getCreditButton(): UIBox {
+    return this.creditButtonBg;
   }
 
   getUIRoot(): Group {
     return this.uiRoot;
   }
 
-  /**
-   * Credit 버튼 표시/숨김
-   */
   setCreditButtonVisible(visible: boolean): void {
     this.creditButton.visible = visible;
   }
