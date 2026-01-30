@@ -1,0 +1,3 @@
+[submodule "lib/threeforge"]
+	path = lib/threeforge
+	url = https://github.com/painh/ThreeForge.git
