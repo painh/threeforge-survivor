@@ -1,3 +1,6 @@
 [submodule "lib/threeforge"]
 	path = lib/threeforge
 	url = https://github.com/painh/ThreeForge.git
+[submodule "lib/three-troika-ui"]
+	path = lib/three-troika-ui
+	url = https://github.com/painh/three-troika-ui.git
