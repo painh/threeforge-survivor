@@ -1,7 +1,15 @@
 import { Entity } from '../../lib/threeforge/src/core/Entity';
 import { Component } from '../../lib/threeforge/src/core/Component';
+import { InventoryComponent } from '../../lib/threeforge/src/inventory/InventoryComponent';
+import { DEFAULT_EQUIPMENT_SLOTS } from '../../lib/threeforge/src/inventory/Equipment';
 import { InputManager } from '../core/InputManager';
-import { PlaneGeometry, Mesh, MeshBasicMaterial } from 'three';
+import {
+  PlaneGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  TextureLoader,
+  SRGBColorSpace,
+} from 'three';
 
 export class PlayerMovementComponent extends Component {
   speed: number = 5;
@@ -47,15 +55,34 @@ export function createPlayer(inputManager: InputManager): Entity {
     tags: ['player', 'character'],
   });
 
-  // Create a simple colored quad for the player
+  // Create player with SVG texture
   const geometry = new PlaneGeometry(1, 1);
-  const material = new MeshBasicMaterial({ color: 0x4488ff });
+  const material = new MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+  });
   const mesh = new Mesh(geometry, material);
   player.add(mesh);
+
+  // Load SVG texture
+  const loader = new TextureLoader();
+  loader.load('/assets/sprites/player.svg', (texture) => {
+    texture.colorSpace = SRGBColorSpace;
+    material.map = texture;
+    material.needsUpdate = true;
+  });
 
   // Add components
   player.addComponent(new PlayerMovementComponent(inputManager));
   player.addComponent(new PlayerHealthComponent());
+
+  // 인벤토리 컴포넌트 (10x4 그리드 + 기본 장비 슬롯) - 디아블로 스타일
+  player.addComponent(
+    new InventoryComponent({
+      inventory: { width: 10, height: 4 },
+      equipment: DEFAULT_EQUIPMENT_SLOTS,
+    })
+  );
 
   return player;
 }

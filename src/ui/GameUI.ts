@@ -286,4 +286,11 @@ export class GameUI {
   getUIRoot(): Group {
     return this.uiRoot;
   }
+
+  /**
+   * Credit 버튼 표시/숨김
+   */
+  setCreditButtonVisible(visible: boolean): void {
+    this.creditButton.visible = visible;
+  }
 }
